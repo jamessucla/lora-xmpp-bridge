@@ -38,16 +38,16 @@ nix develop
 
 SovereignRelay provides a NixOS module to seamlessly integrate the bridge as a declarative `systemd` service that will persist, automatically start on boot, and autorestart on failure.
 
-Include the flake in your `flake.nix` inputs:
+Include the flake in your NixOS configuration's `flake.nix` inputs:
 
 ```nix
 {
-  inputs.sovereign-relay.url = "github:yourusername/sovereign-relay";
+  inputs.sovereign-relay.url = "github:jshiffer/lora-xmpp-bridge";
   # ...
 }
 ```
 
-Then in your NixOS configuration (`configuration.nix` or similar):
+Then in your NixOS configuration (e.g., `configuration.nix`):
 
 ```nix
 {
@@ -65,4 +65,28 @@ Then in your NixOS configuration (`configuration.nix` or similar):
 }
 ```
 
-The bridge daemon requires the `dialout` group to read the serial interface from the Meshtastic USB connection, which is handled automatically by the module's configuration.
+#### Managing the XMPP Password
+
+The `passwordFile` option ensures the XMPP password isn't leaked into the world-readable Nix store or process arguments. The daemon reads the file directly.
+
+For a rapid 24-hour hackathon, you can simply create this file manually on the target machine:
+
+```bash
+sudo mkdir -p /run/secrets
+echo "my_super_secret_password" | sudo tee /run/secrets/xmpp_password
+sudo chown root:root /run/secrets/xmpp_password
+sudo chmod 600 /run/secrets/xmpp_password
+```
+
+*(For a production system, you would use a secret management tool like `sops-nix` or `agenix` to declaratively deploy this file).*
+
+#### Reproducing from a Fresh NixOS Install
+
+To deploy this on a fresh NixOS system for the hackathon:
+
+1. Connect your Meshtastic node via USB.
+2. Ensure flakes are enabled on your fresh install (add `nix.settings.experimental-features = [ "nix-command" "flakes" ];` to your configuration).
+3. Create your configuration flake (e.g., in `/etc/nixos/flake.nix`) that includes the `sovereign-bridge` module and configuration block as shown above.
+4. Create the password file: `echo "yourpassword" | sudo tee /run/secrets/xmpp_password && sudo chmod 600 /run/secrets/xmpp_password`.
+5. Apply the configuration: `sudo nixos-rebuild switch --flake /etc/nixos#yourhostname`.
+6. Verify it's running: `systemctl status sovereign-bridge.service`.
