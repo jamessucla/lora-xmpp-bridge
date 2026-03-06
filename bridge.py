@@ -107,7 +107,7 @@ def main():
 
     logging.info("Connecting to XMPP server...")
     xmpp.connect()
-    xmpp.process(forever=True)
+    xmpp.loop.run_forever()
 
 if __name__ == '__main__':
     main()
