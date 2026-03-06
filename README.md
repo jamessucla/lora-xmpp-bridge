@@ -79,8 +79,15 @@ sudo chmod 600 /run/secrets/xmpp_password
 To deploy this on a fresh NixOS system for the hackathon without experimental features:
 
 1. Connect your Meshtastic node via USB.
-2. Clone this repository to the machine: `git clone https://github.com/jshiffer/lora-xmpp-bridge.git /etc/nixos/lora-xmpp-bridge`.
-3. Edit your `/etc/nixos/configuration.nix` to include the module and configuration block as shown above.
-4. Create the password file: `echo "yourpassword" | sudo tee /run/secrets/xmpp_password && sudo chmod 600 /run/secrets/xmpp_password`.
-5. Apply the configuration: `sudo nixos-rebuild switch`.
-6. Verify it's running: `systemctl status sovereign-bridge.service`.
+2. If your fresh install doesn't have `git`, you can easily drop into a temporary shell that has it:
+   ```bash
+   nix-shell -p git
+   ```
+3. Clone this repository to the machine (we recommend placing it near your config):
+   ```bash
+   sudo git clone https://github.com/jshiffer/lora-xmpp-bridge.git /etc/nixos/lora-xmpp-bridge
+   ```
+4. Edit your `/etc/nixos/configuration.nix` to include the module and configuration block as shown above.
+5. Create the password file: `echo "yourpassword" | sudo tee /run/secrets/xmpp_password && sudo chmod 600 /run/secrets/xmpp_password`.
+6. Apply the configuration: `sudo nixos-rebuild switch`.
+7. Verify it's running: `systemctl status sovereign-bridge.service`.
