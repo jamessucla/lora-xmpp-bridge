@@ -89,6 +89,5 @@ To deploy this on a fresh NixOS system for the hackathon without experimental fe
    ```
 4. Edit your `/etc/nixos/configuration.nix` to include the module and configuration block as shown above.
 5. Create the password file: `echo "yourpassword" | sudo tee /run/secrets/xmpp_password && sudo chmod 600 /run/secrets/xmpp_password`.
-6. **Protip for Raspberry Pi 3B+:** add 1GB of swap to prevent OOM during builds: `sudo fallocate -l 1G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile`.
-7. Apply the configuration: `sudo nixos-rebuild switch`.
-8. Verify it's running: `systemctl status sovereign-bridge.service`.
+6. Apply the configuration: `sudo nixos-rebuild switch`.
+7. Verify it's running: `systemctl status sovereign-bridge.service`.

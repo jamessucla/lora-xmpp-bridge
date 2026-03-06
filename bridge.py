@@ -10,6 +10,10 @@ import slixmpp
 logging.basicConfig(level=logging.INFO, format='%(levelname)-8s %(message)s')
 
 class SovereignBridge(slixmpp.ClientXMPP):
+    # Magic prefix used to identify messages that have already been bridged from the internet.
+    # This prevents multiple bridges on the same mesh from creating an infinite forwarding loop.
+    MAGIC_PREFIX = "🌐 "
+
     def __init__(self, jid, password, room, nick):
         super().__init__(jid, password)
         self.room = room
@@ -45,12 +49,15 @@ class SovereignBridge(slixmpp.ClientXMPP):
 
         body = msg['body']
         sender = msg['mucnick']
-        logging.info(f"[XMPP -> Meshtastic] {sender}: {body}")
+
+        # Prepend the magic prefix before sending it to the mesh
+        out_msg = f"{self.MAGIC_PREFIX}[{sender}] {body}"
+        logging.info(f"[XMPP -> Meshtastic] {out_msg}")
 
         if self.meshtastic_interface:
             # Run the synchronous meshtastic call in a thread pool to avoid blocking asyncio
             asyncio.ensure_future(
-                asyncio.to_thread(self._send_to_meshtastic, f"{sender}: {body}")
+                asyncio.to_thread(self._send_to_meshtastic, out_msg)
             )
 
     def _send_to_meshtastic(self, msg_text):
@@ -64,6 +71,12 @@ class SovereignBridge(slixmpp.ClientXMPP):
             if 'decoded' in packet and 'text' in packet['decoded']:
                 text = packet['decoded']['text']
                 sender_id = packet.get('fromId', 'Unknown')
+
+                # If the message starts with our magic prefix, it means another bridge
+                # (or ourselves) just sent this from the internet. Ignore it to prevent loops!
+                if text.startswith(self.MAGIC_PREFIX):
+                    logging.debug(f"Ignoring bridged message from {sender_id} to prevent loop.")
+                    return
 
                 logging.info(f"[Meshtastic -> XMPP] {sender_id}: {text}")
 
