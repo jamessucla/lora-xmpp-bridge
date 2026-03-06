@@ -30,8 +30,13 @@ class SovereignBridge(slixmpp.ClientXMPP):
     async def start(self, event):
         self.send_presence()
         await self.get_roster()
-        self.plugin['xep_0045'].join_muc(self.room, self.nick)
-        logging.info(f"Joined XMPP MUC: {self.room} as {self.nick}")
+        try:
+            await self.plugin['xep_0045'].join_muc_wait(self.room, self.nick)
+            logging.info(f"Joined XMPP MUC: {self.room} as {self.nick}")
+        except asyncio.TimeoutError:
+            logging.error(f"Timed out trying to join XMPP MUC: {self.room}")
+        except Exception as e:
+            logging.error(f"Error joining XMPP MUC: {e}")
 
     def muc_message(self, msg):
         # Ignore our own messages to avoid loops
