@@ -12,47 +12,41 @@ If the internet goes down, locals can communicate over the Meshtastic LoRa mesh.
 * **The Federated Layer:** XMPP server facilitating connections globally.
 
 ## Prerequisites
-- A local NixOS installation with flakes enabled.
+- A local NixOS installation.
 - A Meshtastic device connected via USB to the NixOS machine.
 - An XMPP account that can join MUCs.
 
 ## Usage
-
-### Using the Nix Flake directly
-
-You can run the python bridge straight from the flake:
-
-```bash
-nix run . -- -j "your_jid@xmpp.org" -p "your_password" -r "your_room@conference.xmpp.org" -n "meshbridge"
-```
 
 ### Developing
 
 You can drop into a Nix shell with all the required python dependencies:
 
 ```bash
-nix develop
+nix-shell
+```
+
+From here you can run the bridge directly:
+```bash
+sovereign-bridge -j "your_jid@xmpp.org" -p "your_password" -r "your_room@conference.xmpp.org" -n "meshbridge"
 ```
 
 ### NixOS Module (Systemd Service)
 
 SovereignRelay provides a NixOS module to seamlessly integrate the bridge as a declarative `systemd` service that will persist, automatically start on boot, and autorestart on failure.
 
-Include the flake in your NixOS configuration's `flake.nix` inputs:
+Clone this repository to your NixOS machine:
 
-```nix
-{
-  inputs.sovereign-relay.url = "github:jshiffer/lora-xmpp-bridge";
-  # ...
-}
+```bash
+git clone https://github.com/jshiffer/lora-xmpp-bridge.git /path/to/lora-xmpp-bridge
 ```
 
-Then in your NixOS configuration (e.g., `configuration.nix`):
+Then in your NixOS configuration (e.g., `/etc/nixos/configuration.nix`), import the `module.nix` file:
 
 ```nix
 {
   imports = [
-    inputs.sovereign-relay.nixosModules.default
+    /path/to/lora-xmpp-bridge/module.nix
   ];
 
   services.sovereign-bridge = {
@@ -82,11 +76,11 @@ sudo chmod 600 /run/secrets/xmpp_password
 
 #### Reproducing from a Fresh NixOS Install
 
-To deploy this on a fresh NixOS system for the hackathon:
+To deploy this on a fresh NixOS system for the hackathon without experimental features:
 
 1. Connect your Meshtastic node via USB.
-2. Ensure flakes are enabled on your fresh install (add `nix.settings.experimental-features = [ "nix-command" "flakes" ];` to your configuration).
-3. Create your configuration flake (e.g., in `/etc/nixos/flake.nix`) that includes the `sovereign-bridge` module and configuration block as shown above.
+2. Clone this repository to the machine: `git clone https://github.com/jshiffer/lora-xmpp-bridge.git /etc/nixos/lora-xmpp-bridge`.
+3. Edit your `/etc/nixos/configuration.nix` to include the module and configuration block as shown above.
 4. Create the password file: `echo "yourpassword" | sudo tee /run/secrets/xmpp_password && sudo chmod 600 /run/secrets/xmpp_password`.
-5. Apply the configuration: `sudo nixos-rebuild switch --flake /etc/nixos#yourhostname`.
+5. Apply the configuration: `sudo nixos-rebuild switch`.
 6. Verify it's running: `systemctl status sovereign-bridge.service`.
